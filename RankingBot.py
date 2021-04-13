@@ -5,7 +5,7 @@ import asyncio
 class MyClient(discord.Client):
     #Einloggen
     async def on_ready(self):
-        print("Bin da :)")
+        #print("Bin da :)")
         conn = sqlite3.connect("rankingbot.db")
         cursor = conn.cursor()
 
@@ -66,7 +66,7 @@ class MyClient(discord.Client):
                     else:
                         created = True
                         break
-                    print(table[i][1])
+                    #print(table[i][1])
                     i+=1
                 if created == False and input_username != "cancel":
                     await channel.send(embed=discord.Embed(title="User is not registered!"))
@@ -150,6 +150,59 @@ class MyClient(discord.Client):
                             "\n\nMPU : 50 Punkte"
             ))
 
+        if ctx.content == "?remove":
+            conn = sqlite3.connect("rankingbot.db")
+            cursor = conn.cursor()
+            await channel.send(embed=discord.Embed(
+                title="Type the user where you will remove points"))
+
+            try:
+                bot_input = await self.wait_for(
+                    "message",
+                    timeout=10,
+                    check=lambda  message: message.author == ctx.author and message.channel == channel
+                )
+                input_username = bot_input.content
+                cursor.execute("select * from points")
+                table = cursor.fetchall()
+                i = 0
+                created = True
+                for user in table:
+                    if input_username != table[i][1]:
+                        created = False
+                    else:
+                        created = True
+                        break
+                    #print(table[i][1])
+                    i+=1
+                if created == False and input_username != "cancel":
+                    await channel.send(embed=discord.Embed(title="User is not registered!"))
+                if input_username == "cancel":
+                    await channel.send(embed=discord.Embed(title="Canceled!"))
+                else:
+                    await channel.send(embed=discord.Embed(
+                        title="Type the points you will remove",
+                        description="Timout error is set to 10 sek."))
+                    try:
+                        bot_input = await self.wait_for(
+                            "message",
+                            timeout=10,
+                            check=lambda  message: message.author == ctx.author and message.channel == channel)
+                        points = int(bot_input.content)
+                        if isinstance(points, int):
+                            cursor.execute('update points set points = points - (?) where points_name = (?)', (points, input_username))
+                            conn.commit()
+                            await channel.send(embed=discord.Embed(title="Score of " + input_username + " is updated."))
+                        else:
+                            await channel.send(embed=discord.Embed(title=crime))
+
+                    except asyncio.TimeoutError:
+                        await channel.send(embed=discord.Embed(title="Timout error!"))
+
+            except asyncio.TimeoutError:
+                await channel.send(embed=discord.Embed(title="Timout error!"))
+            
+
         if ctx.content == "?":
             await channel.send(embed=discord.Embed(
                 title="Ranking-Bot Command help:",
@@ -164,4 +217,6 @@ class MyClient(discord.Client):
 
 
 client = MyClient()
-client.run("ODEzOTI0ODc0Mzg5MTU5OTQ2.YDWYnA.vLo65Vf-JYJZjMzRQ7smihUqvBw")
+
+#discord Bot id
+client.run("$discordbotid")
